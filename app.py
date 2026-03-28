@@ -84,17 +84,8 @@ def init_db():
         """
     )
 
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS app_state (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )
-        """
-    )
-
-    # Seed only the required admin account (no demo users/candidates)
-    cur.execute("SELECT COUNT(*) FROM users")
+    # Keep only static admin account. End users are created dynamically via signup.
+    cur.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'")
     if cur.fetchone()[0] == 0:
         admin_user = (
             os.environ.get("DEFAULT_ADMIN_USERNAME", "admin"),
@@ -107,12 +98,6 @@ def init_db():
         cur.execute(
             "INSERT INTO users(username, password, role, age, gender, prev_vote) VALUES(?,?,?,?,?,?)",
             admin_user,
-        )
-
-    cur.execute("SELECT 1 FROM app_state WHERE key = 'election_status'")
-    if not cur.fetchone():
-        cur.execute(
-            "INSERT INTO app_state(key, value) VALUES('election_status', 'open')"
         )
 
     db.commit()
@@ -129,14 +114,6 @@ def current_user():
         return None
     db = get_db()
     return db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-
-
-def get_election_status(db):
-    """Read election status from persistent app state."""
-    row = db.execute(
-        "SELECT value FROM app_state WHERE key = 'election_status'"
-    ).fetchone()
-    return row["value"] if row else "open"
 
 
 def login_required(role=None):
@@ -165,6 +142,49 @@ def login_required(role=None):
 @app.route("/")
 def home():
     return redirect(url_for("login"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Create dynamic end-user accounts."""
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        age = request.form.get("age", type=int)
+        gender = request.form.get("gender", "").strip().upper()
+        prev_vote = request.form.get("prev_vote", "").strip().upper()
+
+        if not username or not password:
+            flash("Username and password are required.", "danger")
+            return redirect(url_for("register"))
+
+        if not age or age < 18:
+            flash("Age must be 18 or above.", "danger")
+            return redirect(url_for("register"))
+
+        if gender not in {"M", "F", "O"}:
+            flash("Please select a valid gender.", "danger")
+            return redirect(url_for("register"))
+
+        if prev_vote not in {"A", "B", "C"}:
+            flash("Previous vote choice must be A, B, or C.", "danger")
+            return redirect(url_for("register"))
+
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO users(username, password, role, age, gender, prev_vote) VALUES(?,?,?,?,?,?)",
+                (username, password, "user", age, gender, prev_vote),
+            )
+            db.commit()
+        except sqlite3.IntegrityError:
+            flash("Username already exists. Please choose another.", "warning")
+            return redirect(url_for("register"))
+
+        flash("Account created successfully. Please login.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -223,10 +243,11 @@ def dashboard():
     user_vote = db.execute(
         "SELECT candidate_id FROM votes WHERE user_id = ?", (user["id"],)
     ).fetchone()
-    election_status = get_election_status(db)
 
     # Decision-tree based prediction
     ml_prediction = predict_candidate(user["age"], user["gender"], user["prev_vote"])
+
+    leading_candidate = vote_rows[0]["name"] if vote_rows else "No votes yet"
 
     return render_template(
         "dashboard.html",
@@ -235,8 +256,8 @@ def dashboard():
         total_votes=total_votes,
         vote_rows=vote_rows,
         has_voted=bool(user_vote),
-        election_status=election_status,
         ml_prediction=ml_prediction,
+        leading_candidate=leading_candidate,
     )
 
 
@@ -246,11 +267,6 @@ def vote():
     """Voting page that prevents duplicate vote per user."""
     db = get_db()
     user = current_user()
-    election_status = get_election_status(db)
-
-    if election_status != "open":
-        flash("Voting is currently closed by the admin.", "warning")
-        return redirect(url_for("dashboard"))
 
     has_voted = db.execute(
         "SELECT 1 FROM votes WHERE user_id = ?", (user["id"],)
@@ -337,21 +353,8 @@ def admin():
             db.commit()
             flash("Voting system reset: all votes cleared.", "info")
 
-        elif action == "set_election_state":
-            election_status = request.form.get("election_status", "").strip().lower()
-            if election_status in {"open", "closed"}:
-                db.execute(
-                    "UPDATE app_state SET value = ? WHERE key = 'election_status'",
-                    (election_status,),
-                )
-                db.commit()
-                flash(f"Election state updated to: {election_status}.", "success")
-            else:
-                flash("Invalid election state.", "danger")
-
         return redirect(url_for("admin"))
 
-    election_status = get_election_status(db)
     candidates = db.execute("SELECT * FROM candidates ORDER BY id").fetchall()
     users = db.execute("SELECT id, username, role, age, gender, prev_vote FROM users").fetchall()
     votes = db.execute(
@@ -369,7 +372,6 @@ def admin():
         candidates=candidates,
         users=users,
         votes=votes,
-        election_status=election_status,
     )
 
 

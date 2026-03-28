@@ -4,32 +4,6 @@
 <h2 class="mb-3">Admin Dashboard</h2>
 
 <div class="row g-3 mb-4">
-  <div class="col-md-12">
-    <div class="card">
-      <div class="card-header">Election State Management</div>
-      <div class="card-body">
-        <div class="d-flex flex-wrap gap-3 align-items-center">
-          <span class="fw-semibold">Current State:</span>
-          <span class="badge {{ 'bg-success' if election_status == 'open' else 'bg-secondary' }}">
-            {{ election_status|upper }}
-          </span>
-        </div>
-        <form method="POST" class="row g-2 mt-2">
-          <input type="hidden" name="action" value="set_election_state">
-          <div class="col-md-4">
-            <select class="form-select" name="election_status" required>
-              <option value="open" {% if election_status == 'open' %}selected{% endif %}>Open</option>
-              <option value="closed" {% if election_status == 'closed' %}selected{% endif %}>Closed</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-primary w-100">Update State</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <div class="col-md-6">
     <div class="card">
       <div class="card-header">Add Candidate</div>
