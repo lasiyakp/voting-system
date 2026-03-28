@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<h2 class="mb-3">Live Results</h2>
+<p class="text-muted">Total votes cast: <strong>{{ total_votes }}</strong></p>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Party</th>
+            <th>Votes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.name }}</td>
+            <td>{{ row.party }}</td>
+            <td><span class="badge bg-primary">{{ row.vote_count }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

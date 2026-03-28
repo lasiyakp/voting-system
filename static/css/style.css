@@ -1,0 +1,12 @@
+body {
+    background: #f5f7fb;
+}
+
+.info-card {
+    border: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    font-weight: 600;
+}

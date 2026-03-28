@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-3">Admin Dashboard</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Add Candidate</div>
+      <div class="card-body">
+        <form method="POST" class="row g-2">
+          <input type="hidden" name="action" value="add_candidate">
+          <div class="col-md-6"><input class="form-control" name="name" placeholder="Candidate Name" required></div>
+          <div class="col-md-6"><input class="form-control" name="party" placeholder="Party Name" required></div>
+          <div class="col-12"><button class="btn btn-success">Add Candidate</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Reset Voting</div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="reset_voting">
+          <button class="btn btn-danger">Reset All Votes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Delete Candidate</div>
+  <div class="card-body">
+    <form method="POST" class="row g-2 align-items-end">
+      <input type="hidden" name="action" value="delete_candidate">
+      <div class="col-md-8">
+        <label class="form-label">Choose Candidate</label>
+        <select class="form-select" name="candidate_id" required>
+          {% for c in candidates %}
+          <option value="{{ c.id }}">{{ c.name }} - {{ c.party }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4"><button class="btn btn-outline-danger w-100">Delete</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Users List</div>
+  <div class="card-body table-responsive">
+    <table class="table table-sm table-bordered">
+      <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Age</th><th>Gender</th><th>Prev Vote</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr><td>{{ u.id }}</td><td>{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.age }}</td><td>{{ u.gender }}</td><td>{{ u.prev_vote }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">All Votes</div>
+  <div class="card-body table-responsive">
+    <table class="table table-sm table-striped">
+      <thead><tr><th>User</th><th>Voted Candidate</th><th>Time</th></tr></thead>
+      <tbody>
+        {% for v in votes %}
+        <tr><td>{{ v.username }}</td><td>{{ v.candidate_name }}</td><td>{{ v.voted_at }}</td></tr>
+        {% else %}
+        <tr><td colspan="3" class="text-center text-muted">No votes yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

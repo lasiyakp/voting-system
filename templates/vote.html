@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Vote{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h3 class="mb-3">Cast Your Vote</h3>
+        <form method="POST">
+          {% for candidate in candidates %}
+          <div class="form-check card p-3 mb-2">
+            <input class="form-check-input" type="radio" name="candidate_id" value="{{ candidate.id }}" id="c{{ candidate.id }}">
+            <label class="form-check-label" for="c{{ candidate.id }}">
+              <strong>{{ candidate.name }}</strong> — {{ candidate.party }}
+            </label>
+          </div>
+          {% endfor %}
+          <button class="btn btn-success mt-3">Submit Vote</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
