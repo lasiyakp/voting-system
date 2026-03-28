@@ -1,5 +1,6 @@
-"""Flask Voting System (dummy/demo project)."""
+"""Flask Voting System."""
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -43,7 +44,7 @@ def close_db(exception):
 
 
 def init_db():
-    """Initialize tables and dummy data."""
+    """Initialize application tables and baseline state."""
     db = sqlite3.connect(DB_PATH)
     cur = db.cursor()
 
@@ -83,30 +84,36 @@ def init_db():
         """
     )
 
-    # Dummy users
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS app_state (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+        """
+    )
+
+    # Seed only the required admin account (no demo users/candidates)
     cur.execute("SELECT COUNT(*) FROM users")
     if cur.fetchone()[0] == 0:
-        users = [
-            ("admin", "admin123", "admin", 35, "M", "A"),
-            ("alice", "user123", "user", 21, "F", "B"),
-            ("bob", "user123", "user", 27, "M", "A"),
-            ("charlie", "user123", "user", 31, "M", "C"),
-        ]
-        cur.executemany(
+        admin_user = (
+            os.environ.get("DEFAULT_ADMIN_USERNAME", "admin"),
+            os.environ.get("DEFAULT_ADMIN_PASSWORD", "admin123"),
+            "admin",
+            35,
+            "M",
+            "A",
+        )
+        cur.execute(
             "INSERT INTO users(username, password, role, age, gender, prev_vote) VALUES(?,?,?,?,?,?)",
-            users,
+            admin_user,
         )
 
-    # Dummy candidates
-    cur.execute("SELECT COUNT(*) FROM candidates")
-    if cur.fetchone()[0] == 0:
-        candidates = [
-            ("Candidate A", "Party Alpha"),
-            ("Candidate B", "Party Beta"),
-            ("Candidate C", "Party Gamma"),
-        ]
-        cur.executemany(
-            "INSERT INTO candidates(name, party) VALUES(?,?)", candidates)
+    cur.execute("SELECT 1 FROM app_state WHERE key = 'election_status'")
+    if not cur.fetchone():
+        cur.execute(
+            "INSERT INTO app_state(key, value) VALUES('election_status', 'open')"
+        )
 
     db.commit()
     db.close()
@@ -122,6 +129,14 @@ def current_user():
         return None
     db = get_db()
     return db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+def get_election_status(db):
+    """Read election status from persistent app state."""
+    row = db.execute(
+        "SELECT value FROM app_state WHERE key = 'election_status'"
+    ).fetchone()
+    return row["value"] if row else "open"
 
 
 def login_required(role=None):
@@ -208,6 +223,7 @@ def dashboard():
     user_vote = db.execute(
         "SELECT candidate_id FROM votes WHERE user_id = ?", (user["id"],)
     ).fetchone()
+    election_status = get_election_status(db)
 
     # Decision-tree based prediction
     ml_prediction = predict_candidate(user["age"], user["gender"], user["prev_vote"])
@@ -219,6 +235,7 @@ def dashboard():
         total_votes=total_votes,
         vote_rows=vote_rows,
         has_voted=bool(user_vote),
+        election_status=election_status,
         ml_prediction=ml_prediction,
     )
 
@@ -229,6 +246,11 @@ def vote():
     """Voting page that prevents duplicate vote per user."""
     db = get_db()
     user = current_user()
+    election_status = get_election_status(db)
+
+    if election_status != "open":
+        flash("Voting is currently closed by the admin.", "warning")
+        return redirect(url_for("dashboard"))
 
     has_voted = db.execute(
         "SELECT 1 FROM votes WHERE user_id = ?", (user["id"],)
@@ -241,6 +263,14 @@ def vote():
         candidate_id = request.form.get("candidate_id")
         if not candidate_id:
             flash("Please select a candidate.", "danger")
+            return redirect(url_for("vote"))
+
+        candidate_exists = db.execute(
+            "SELECT 1 FROM candidates WHERE id = ?",
+            (int(candidate_id),),
+        ).fetchone()
+        if not candidate_exists:
+            flash("Selected candidate no longer exists.", "danger")
             return redirect(url_for("vote"))
 
         db.execute(
@@ -307,8 +337,21 @@ def admin():
             db.commit()
             flash("Voting system reset: all votes cleared.", "info")
 
+        elif action == "set_election_state":
+            election_status = request.form.get("election_status", "").strip().lower()
+            if election_status in {"open", "closed"}:
+                db.execute(
+                    "UPDATE app_state SET value = ? WHERE key = 'election_status'",
+                    (election_status,),
+                )
+                db.commit()
+                flash(f"Election state updated to: {election_status}.", "success")
+            else:
+                flash("Invalid election state.", "danger")
+
         return redirect(url_for("admin"))
 
+    election_status = get_election_status(db)
     candidates = db.execute("SELECT * FROM candidates ORDER BY id").fetchall()
     users = db.execute("SELECT id, username, role, age, gender, prev_vote FROM users").fetchall()
     votes = db.execute(
@@ -321,7 +364,13 @@ def admin():
         """
     ).fetchall()
 
-    return render_template("admin.html", candidates=candidates, users=users, votes=votes)
+    return render_template(
+        "admin.html",
+        candidates=candidates,
+        users=users,
+        votes=votes,
+        election_status=election_status,
+    )
 
 
 init_db()
