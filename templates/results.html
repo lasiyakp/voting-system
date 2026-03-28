@@ -4,7 +4,7 @@
 <h2 class="mb-3">Live Results</h2>
 <p class="text-muted">Total votes cast: <strong>{{ total_votes }}</strong></p>
 
-<div class="card">
+<div class="card fade-in-up">
   <div class="card-body">
     <div class="table-responsive">
       <table class="table table-striped align-middle">
@@ -20,7 +20,11 @@
           <tr>
             <td>{{ row.name }}</td>
             <td>{{ row.party }}</td>
-            <td><span class="badge bg-primary">{{ row.vote_count }}</span></td>
+            <td><span class="badge bg-primary pulse">{{ row.vote_count }}</span></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-center text-muted">No candidate data available.</td>
           </tr>
           {% endfor %}
         </tbody>

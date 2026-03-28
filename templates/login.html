@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
 {% block title %}Login{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-5">
-    <div class="card shadow-sm">
+<div class="row g-4 align-items-center">
+  <div class="col-lg-6">
+    <div class="hero-banner fade-in-up">
+      <img src="https://images.unsplash.com/photo-1524499982521-1ffd58dd89ea?auto=format&fit=crop&w=1200&q=80" alt="Tamil Nadu civic banner" class="img-fluid rounded-4 shadow">
+      <div class="hero-overlay">
+        <h2>Tamil Nadu Election Portal</h2>
+        <p>Secure digital voting with real-time results and animated insights.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5 ms-auto">
+    <div class="card shadow-sm glass-card fade-in-up">
       <div class="card-body p-4">
         <h3 class="mb-3 text-center">Login</h3>
-        <p class="text-muted text-center small">Dummy auth: admin/admin123 or alice/user123</p>
+        <p class="text-muted text-center small">Default admin: <strong>admin / admin123</strong></p>
         <form method="POST">
           <div class="mb-3">
             <label class="form-label">Username</label>
@@ -18,6 +27,7 @@
           </div>
           <button class="btn btn-primary w-100">Login</button>
         </form>
+        <p class="mt-3 mb-0 text-center small">New voter? <a href="{{ url_for('register') }}">Create account</a></p>
       </div>
     </div>
   </div>

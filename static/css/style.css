@@ -1,12 +1,85 @@
 body {
-    background: #f5f7fb;
+    background: linear-gradient(135deg, #eef2ff, #f9fbff);
 }
 
 .info-card {
     border: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 .card-header {
     font-weight: 600;
+}
+
+.glass-card {
+    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.hero-banner,
+.tn-banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+}
+
+.hero-overlay,
+.tn-banner-overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 1rem 1.2rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+    color: #fff;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.7s ease both;
+}
+
+.pop-in {
+    animation: popIn 0.5s ease both;
+}
+
+.pulse {
+    animation: pulse 1.2s infinite;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.35);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(13, 110, 253, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+    }
 }

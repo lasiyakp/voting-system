@@ -12,11 +12,17 @@ if (chartDataNode) {
         datasets: [{
           label: 'Votes',
           data: payload.counts,
-          borderWidth: 1
+          borderWidth: 1,
+          borderRadius: 12,
+          backgroundColor: 'rgba(13, 110, 253, 0.65)'
         }]
       },
       options: {
         responsive: true,
+        animation: {
+          duration: 1200,
+          easing: 'easeOutBounce'
+        },
         scales: {
           y: {
             beginAtZero: true,
